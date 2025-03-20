@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategy Selector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            padding: 20px;
+            width: 500px;
+            min-height: 400px;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: space-between;
+            background: #f1f3f5;
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: background 0.3s;
+            font-weight: bold;
+            color: #abacad;
+        }
+
+        .tab.active {
+            background: #1367ef;
+            color: white;
+            font-weight: bold;
+        }
+
+        .dropdown {
+            padding: 5px;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .strategy-container {
+            margin-top: 10px;
+        }
+
+        .strategy {
+            padding: 16px;
+            margin-top: 20px;
+            border-radius: 10px;
+            display: flex;
+            border: 1px solid rgb(226, 226, 226);
+            justify-content: space-between;
+        }
+
+        .empty {
+            text-align: center;
+            color: gray;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .dropdown-selected {
+            position: relative;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .dropdown-list {
+            border-radius: 5px;
+            max-height: 0;
+            /* display: none; */
+            overflow: hidden;
+            padding: 0 10px;
+            transition: max-height .3s ease-out, margin-bottom 0.3s ease-out;
+        }
+
+        .dropdown-list.show {
+            max-height: 300px;
+        }
+
+        .dropdown-list div {
+            padding: 10px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            margin: 10px auto;
+            border-radius: 10px;
+        }
+
+        .dropdown-list div:hover {
+            background: #f0f0f0;
+        }
+
+        .show {
+            display: block;
+            background: transparent;
+        }
+
+        .main-dropdown {
+            position: relative;
+        }
+
+        .icon {
+            position: absolute;
+            top: 20%;
+            right: 10px;
+            font-size: 20px;
+            color: #007bff;
+            cursor: pointer;
+        }
+        .strategy-count{
+            color: #abacad;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .empty-date{
+            color: #000000;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="tabs"></div>
+        <div class="dropdown">
+            <div class="main-dropdown">
+                <div class="dropdown-selected" id="selectedDate"></div>
+                <span class="icon"></span>
+
+            </div>
+            <div class="dropdown-list" id="dropdownList">
+            </div>
+        </div>
+        <div class="strategy-container"></div>
+    </div>
+
+    <script>
+        // Data Arrays
+        const dateArray = ['24-Apr-2024', '02-May-2024', '09-May-2024', '31-May-2024', '21-Jun-2024'];
+
+        const strategyArray = [
+            {
+                'View': 'Bullish', 'Value': {
+                    '24-Apr-2024': ['Bull Call Spread', 'Bull Put Spread', 'Bull Put Spread', 'Long Call', 'Bull Put Spread', 'Bull Call Spread', 'Strategy1', 'Bull Call Spread', 'Strategy1', 'Strategy1', 'SpreadStrategy', 'Bull Call Spread'],
+                    '02-May-2024': ['Bull Call Spread', 'Bull Call Spread', 'Bull Put Spread', 'Long Call', 'Long Call', 'Long Call', 'Bull Put Spread', 'Bull Call Spread', 'Strategy1', 'Bull Call Spread', 'Strategy2', 'Strategy1', 'Strategy2', 'Bull Call Spread'],
+                    '09-May-2024': ['Strategy Put', 'Strategy Call', 'Strategy Call', 'Strategy Call', 'Strategy Put']
+                }
+            },
+            {
+                'View': 'Bearish', 'Value': {
+                    '24-Apr-2024': ['Bear Call Spread', 'Bear Call Spread', 'Bear Call Spread', 'Long Put', 'Long Put', 'Long Put', 'Bear Call Spread'],
+                    '31-May-2024': ['Long Put', 'Long Put', 'Long Put', 'Long Put', 'Long Put'],
+                    '21-Jun-2024': ['Strategy3', 'Strategy3', 'Bear Put Spread', 'Strategy3', 'Long Put', 'Long Put']
+                }
+            },
+            {
+                'View': 'Rangebound', 'Value': {
+                    '24-Apr-2024': ['Short Straddle', 'Short Strangle', 'Short Strangle', 'Iron Butterfly', 'Short Strangle', 'Short Straddle', 'Strategy1', 'Short Straddle', 'Strategy1', 'Strategy1', 'SpreadStrategy', 'Short Straddle'],
+                    '02-May-2024': ['Short Straddle', 'Short Straddle', 'Short Strangle', 'Iron Butterfly', 'Iron Butterfly', 'Iron Butterfly', 'Short Strangle', 'Short Straddle', 'Strategy1', 'Short Straddle', 'Strategy2', 'Strategy1', 'Strategy2', 'Short Straddle'],
+                    '21-Jun-2024': ['Iron Condor', 'Iron Butterfly', 'Iron Butterfly', 'Iron Butterfly', 'Iron Condor']
+                }
+            },
+            {
+                'View': 'Volatile', 'Value': {
+                    '02-May-2024': ['Long Straddle', 'Long Strangle', 'Long Strangle', 'Long Strangle', 'Long Straddle', 'Strategy1', 'Long Straddle', 'Strategy1', 'Strategy1', 'Spread-Strategy', 'Long Straddle'],
+                    '09-May-2024': ['Long Straddle', 'Long Straddle', 'Long Strangle', 'Long Straddle', 'Strategy1', 'Long Straddle', 'Strategy2', 'Strategy1', 'Strategy2', 'Long Straddle'],
+                    '31-May-2024': ['Long Straddle', 'Long Strangle', 'Long Strangle', 'Long Straddle', 'Long Straddle']
+                }
+            }
+        ];
+
+        let selectedView = 'Bullish'; // Default View
+
+        // Get UI Elements
+        let selectedDateValue = dateArray[0]; // Default Date
+        const tabsContainer = document.querySelector('.tabs');
+        const mainContainer = document.querySelector('.container');
+        const dateDropdown = document.querySelector('.dropdown');
+        const strategyContainer = document.querySelector('.strategy-container');
+        const icon = document.querySelector('.icon');
+        icon.innerHTML = "&#9660;";  
+
+        const selectedDate = document.getElementById("selectedDate");
+        selectedDate.textContent = selectedDateValue;
+        const dropdownList = document.getElementById("dropdownList");
+
+        // Populate dropdown list dynamically
+        dateArray.forEach(date => {
+            const dateElement = document.createElement("div");
+            dateElement.textContent = date;
+            dateElement.addEventListener("click", () => {
+                selectedDateValue = date;
+                selectedDate.textContent = date;
+                dropdownList.classList.remove("show");
+                icon.innerHTML = "&#9660;";
+                renderStrategies();
+            });
+            dropdownList.appendChild(dateElement);
+        });
+
+        // Toggle dropdown on click
+        selectedDate.addEventListener("click", () => {
+            const isDropdownVisible = dropdownList.classList.toggle("show");
+            icon.innerHTML = isDropdownVisible ? "&#9650;" : "&#9660;"; // Toggle icon properly
+        });
+
+        // Attach click event to icon for toggling dropdown
+        icon.addEventListener("click", () => {
+            const isDropdownVisible = dropdownList.classList.toggle("show");
+            icon.innerHTML = isDropdownVisible ? "&#9650;" : "&#9660;";
+        });
+
+        // Render Tabs
+        function renderTabs() {
+            tabsContainer.innerHTML = '';
+            strategyArray.forEach(item => {
+                const tab = document.createElement('div');
+                tab.classList.add('tab');
+                tab.textContent = item.View;
+                if (item.View === selectedView) tab.classList.add('active');
+                tab.onclick = () => {
+                    selectedView = item.View;
+                    renderTabs();
+                    renderStrategies();
+                };
+                tabsContainer.appendChild(tab);
+            });
+        }
+
+
+        // Render Strategies
+        function renderStrategies() {
+            strategyContainer.innerHTML = '';
+
+            const selectedViewObj = strategyArray.find(item => item.View === selectedView);
+            const strategies = selectedViewObj?.Value[selectedDateValue] || [];
+
+            if (strategies.length === 0) {
+                strategyContainer.innerHTML = `<div class="empty"><p>There are no strategies for </p><strong class="empty-date">${selectedDateValue}</strong></div>`;
+                return;
+            }
+
+            // Count occurrences
+            const strategyCount = {};
+            strategies.forEach(strategy => {
+                strategyCount[strategy] = (strategyCount[strategy] || 0) + 1;
+            });
+
+            // Create Strategy Cards
+            Object.entries(strategyCount).forEach(([name, count]) => {
+                const strategyDiv = document.createElement('div');
+                strategyDiv.className = 'strategy';
+                strategyDiv.innerHTML = `<strong>${name}</strong> <span class="strategy-count">• ${count} ${count > 1 ? 'Strategies' : 'Strategy'}</span>`;
+                strategyContainer.appendChild(strategyDiv);
+            });
+        }
+
+        renderTabs();
+        renderStrategies();
+    </script>
+</body>
+
+</html>
